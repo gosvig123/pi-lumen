@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import type { LumenCommand } from "./command.ts";
+import { lumenBinaryPath, type LumenCommand } from "./command.ts";
 
 export type LumenResult = { code: number | null; stdout: string; error?: string };
 
@@ -31,7 +31,7 @@ export class LumenRunner {
       process.stdout.write("\x1b[2J\x1b[H");
       process.stdout.write(`Running ${command.display}\n`);
       process.stdout.write(
-        "Annotate with i, open annotations with I, press s to prefill Pi's input.\n\n",
+        "Press p for PR intent. Annotate with i, open annotations with I, then press s.\n\n",
       );
       return this.spawnInteractive(cwd, command);
     } finally {
@@ -58,7 +58,7 @@ export class LumenRunner {
   private errorHint(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error);
     return message.includes("ENOENT") || message.includes("not found")
-      ? "lumen is not installed or not on PATH. Install with `brew install jnsahaj/lumen/lumen` or `cargo install lumen`."
+      ? `lumen-pi is missing at ${lumenBinaryPath()}. Build the local Lumen fork and copy it into Pi's bin directory.`
       : message;
   }
 }

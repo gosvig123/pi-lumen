@@ -26,78 +26,41 @@ function context(selected: string | undefined, notifications: string[]): Extensi
 }
 
 describe("pickPullRequest", () => {
-  test("turns the selected pull request into a diff command", async () => {
-    const notifications: string[] = [];
-    const result = await pickPullRequest(
-      context("#7 · Add picker · contributor · updated 2026-07-12", notifications),
-      {
-        listRecent: async () => pullRequests,
-      },
-      {
-        resolve: async () => ({ kind: "local", reference: "base...head" }),
-      },
-    );
-
-    expect(result?.args).toEqual(["diff", "base...head"]);
-    expect(notifications).toEqual([]);
-  });
-
-  test("keeps the current branch pull request at the top without local branch diff fallback", async () => {
-    const currentPullRequest: PullRequest = {
-      ...pullRequests[0]!,
-      number: 8,
-      title: "Current pushed PR",
-      url: "https://github.com/example/repo/pull/8",
-      updatedAt: "2026-07-01T10:00:00Z",
-      isCurrentBranch: true,
-    };
-    const result = await pickPullRequest(
-      context("★ #8 · Current pushed PR · contributor · updated 2026-07-01", []),
-      {
-        listRecent: async () => [pullRequests[0]!, currentPullRequest],
-      },
-      { resolve: async () => ({ kind: "local", reference: "pushed-base...pushed-head" }) },
-    );
-
-    expect(result?.args).toEqual(["diff", "pushed-base...pushed-head"]);
-  });
-
-  test("falls back to Lumen PR mode when no local range can be proven", async () => {
+  test("opens selected pull request in Lumen PR mode", async () => {
     const result = await pickPullRequest(
       context("#7 · Add picker · contributor · updated 2026-07-12", []),
       { listRecent: async () => pullRequests },
-      {
-        resolve: async () => ({
-          kind: "remote",
-          reference: pullRequests[0]!.url,
-          reason: "fetch-failed",
-        }),
-      },
     );
-
-    expect(result?.args).toEqual(["diff", "--pr", "https://github.com/example/repo/pull/7"]);
+    expect(result?.args).toEqual(["diff", "--pr", pullRequests[0]!.url]);
   });
 
-  test("does not launch a command when the picker is cancelled", async () => {
-    const notifications: string[] = [];
+  test("keeps current branch pull request first", async () => {
+    const current = {
+      ...pullRequests[0]!,
+      number: 8,
+      title: "Current",
+      url: "https://github.com/example/repo/pull/8",
+      isCurrentBranch: true,
+    };
     const result = await pickPullRequest(
-      context(undefined, notifications),
-      { listRecent: async () => pullRequests },
-      { resolve: async () => ({ kind: "local", reference: "base...head" }) },
+      context("★ #8 · Current · contributor · updated 2026-07-12", []),
+      { listRecent: async () => [pullRequests[0]!, current] },
     );
+    expect(result?.args).toEqual(["diff", "--pr", current.url]);
+  });
 
+  test("does not launch when picker is cancelled", async () => {
+    const result = await pickPullRequest(context(undefined, []), {
+      listRecent: async () => pullRequests,
+    });
     expect(result).toBeNull();
-    expect(notifications).toEqual([]);
   });
 
-  test("notifies when there are no open pull requests", async () => {
+  test("notifies when no open pull requests exist", async () => {
     const notifications: string[] = [];
-    const result = await pickPullRequest(
-      context(undefined, notifications),
-      { listRecent: async () => [] },
-      { resolve: async () => ({ kind: "local", reference: "base...head" }) },
-    );
-
+    const result = await pickPullRequest(context(undefined, notifications), {
+      listRecent: async () => [],
+    });
     expect(result).toBeNull();
     expect(notifications).toEqual(["No open pull requests found for this repository."]);
   });

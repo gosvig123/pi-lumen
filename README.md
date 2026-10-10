@@ -1,38 +1,34 @@
 # Pi Lumen Review
 
-Pi extension for interactive [Lumen](https://github.com/jnsahaj/lumen) code review. Run `/lumen` to choose a recent open GitHub pull request, or pass Lumen `diff` arguments directly. Exported Lumen annotations are prefilled into Pi's editor.
+Local Pi extension for interactive [Lumen](https://github.com/jnsahaj/lumen) code review. It launches the `lumen-pi` fork, shows GitHub PR intent inside the viewer, and returns annotations to the originating Pi thread or editor.
 
 ## Prerequisites
 
 - [Pi](https://github.com/badlogic/pi-mono)
-- [Lumen](https://github.com/jnsahaj/lumen), installed and available on `PATH`
-- [GitHub CLI](https://cli.github.com/) (`gh`), installed and authenticated for the PR picker
+- Custom `lumen-pi` binary at `${PI_CODING_AGENT_DIR:-~/.pi/agent}/bin/lumen-pi`
+- [GitHub CLI](https://cli.github.com/) (`gh`), installed and authenticated
 
 ```sh
-brew install jnsahaj/lumen/lumen
-brew install gh
-
+cd ~/.pi/agent/local/lumen-pi
+cargo build --release --no-default-features
+cp target/release/lumen ~/.pi/agent/bin/lumen-pi
 gh auth login
 ```
 
-Cargo users can install Lumen with `cargo install lumen`.
+The `--no-default-features` build supports Git and avoids the optional Jujutsu dependency's newer Rust requirement.
 
 ## Install
 
 ```sh
-pi install npm:pi-lumen-review
+cd ~/.pi/agent/local/pi-lumen
+bun install --frozen-lockfile
+pi install ~/.pi/agent/local/pi-lumen
 ```
 
-Try it for one run:
+Try without installing:
 
 ```sh
-pi -e npm:pi-lumen-review
-```
-
-For local development:
-
-```sh
-pi -e /path/to/pi-lumen-review
+pi -e ~/.pi/agent/local/pi-lumen
 ```
 
 ## Usage
@@ -43,7 +39,7 @@ From a GitHub repository in Pi's interactive TUI:
 /lumen
 ```
 
-With no arguments, `/lumen` opens the GitHub pull request for the current branch when one exists. The pushed PR state is the source of truth: the extension verifies the PR's current base and head commits with GitHub and uses the local Git graph when it is complete. If commits or ancestry are missing, it narrowly fetches the PR refs; if that cannot produce a valid local range, it falls back to Lumen's GitHub PR mode.
+With no arguments, `/lumen` opens the GitHub pull request for the current branch when one exists. PR selections always use Lumen's GitHub mode so the viewer can show title, description, URL, and base/head branches. Press `p` to reopen the bounded PR intent modal.
 
 If the current branch has no open PR, `/lumen` lists recent open pull requests from the current repository. Use `/lumen --pick` to force the picker:
 
@@ -51,7 +47,7 @@ If the current branch has no open PR, `/lumen` lists recent open pull requests f
 /lumen --pick
 ```
 
-Other explicit arguments bypass current-PR detection and are passed to `lumen diff`:
+Other explicit arguments bypass current-PR detection and are passed to `lumen-pi diff`:
 
 ```text
 /lumen HEAD~1
@@ -78,8 +74,10 @@ These options are provided by the installed Lumen version, not implemented indep
 
 1. Annotate a selection, hunk, or file in Lumen with `i`.
 2. Open annotations with `I`.
-3. Press `s`, then confirm with `Enter` to send them to Pi.
-4. Pi pre-fills its input editor with the exported annotations.
+3. Press `s`, then confirm with `Enter` to return annotations to Pi.
+4. Choose **Send to current Pi thread**, **Prefill editor**, or **Cancel**.
+
+When PR metadata is available, returned feedback includes bounded PR intent labeled as untrusted author-provided context.
 
 ## Mode support
 
@@ -90,7 +88,7 @@ The PR picker and `lumen diff` are interactive. `/lumen` requires Pi's interacti
 - **`gh` is missing:** install GitHub CLI and verify with `gh --version`.
 - **GitHub authentication fails:** run `gh auth login`, then verify with `gh repo view`.
 - **The repository cannot be detected:** run `/lumen` from a GitHub checkout with a configured remote.
-- **Lumen is missing:** install it and verify with `command -v lumen` and `lumen --version`.
+- **`lumen-pi` is missing:** build the local fork, copy it to `~/.pi/agent/bin/lumen-pi`, and verify with `lumen-pi --version`.
 - **No annotations appear:** create annotations and press `s`, then `Enter`, before closing Lumen.
 - **No pull requests appear:** the picker currently lists open pull requests only.
 

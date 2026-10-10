@@ -1,13 +1,18 @@
 import { describe, expect, test } from "bun:test";
-import { diffCommand } from "../src/command.ts";
+import { isAbsolute } from "node:path";
+import { diffCommand, lumenBinaryPath } from "../src/command.ts";
 
 describe("diffCommand", () => {
   test("empty input produces the base lumen diff command", () => {
-    expect(diffCommand("")).toEqual({
-      program: "lumen",
+    expect(diffCommand("")).toMatchObject({
       args: ["diff"],
-      display: "lumen diff",
+      display: "lumen-pi diff",
     });
+  });
+
+  test("uses an absolute binary path without relying on PATH", () => {
+    expect(isAbsolute(diffCommand("").program)).toBeTrue();
+    expect(lumenBinaryPath("/custom/agent")).toBe("/custom/agent/bin/lumen-pi");
   });
 
   test("input already beginning with diff does not duplicate it", () => {
