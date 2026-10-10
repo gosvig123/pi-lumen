@@ -9,9 +9,10 @@ Local Pi extension for interactive [Lumen](https://github.com/jnsahaj/lumen) cod
 - [GitHub CLI](https://cli.github.com/) (`gh`), installed and authenticated
 
 ```sh
+git clone --branch pi-agent-kit https://github.com/gosvig123/lumen.git ~/.pi/agent/local/lumen-pi
 cd ~/.pi/agent/local/lumen-pi
 cargo build --release --no-default-features
-cp target/release/lumen ~/.pi/agent/bin/lumen-pi
+mkdir -p ~/.pi/agent/bin && cp target/release/lumen ~/.pi/agent/bin/lumen-pi
 gh auth login
 ```
 
@@ -20,15 +21,13 @@ The `--no-default-features` build supports Git and avoids the optional Jujutsu d
 ## Install
 
 ```sh
-cd ~/.pi/agent/local/pi-lumen
-bun install --frozen-lockfile
-pi install ~/.pi/agent/local/pi-lumen
+pi install git:github.com/gosvig123/pi-lumen
 ```
 
 Try without installing:
 
 ```sh
-pi -e ~/.pi/agent/local/pi-lumen
+pi -e git:github.com/gosvig123/pi-lumen
 ```
 
 ## Usage
